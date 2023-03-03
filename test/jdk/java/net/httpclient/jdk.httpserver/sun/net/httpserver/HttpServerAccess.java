@@ -47,4 +47,21 @@ public class HttpServerAccess {
         Set<HttpConnection> idleConnectionPool = (Set<HttpConnection>) idleConnectionSet;
         return idleConnectionPool.size();
     }
+
+    // Given a HttpServer object get the number of idleConnections it currently has
+    public static int getTotalConnectionCount(HttpServer server) throws Exception{
+        // Use reflection to get server object which is HTTPServerImpl
+        Field serverField = server.getClass().getDeclaredField("server");
+        serverField.setAccessible(true);
+
+        // Get the actual serverImpl class, then get the totalConnection Field
+        Object serverImpl = serverField.get(server);
+        Field totalConnectionField = serverImpl.getClass().getDeclaredField("allConnections");
+        totalConnectionField.setAccessible(true);
+
+        // Finally get the totalConnection object which is of type Set<HttpConnection>
+        Object totalConnectionSet = totalConnectionField.get(serverImpl);
+        Set<HttpConnection> totalConnectionPool = (Set<HttpConnection>) totalConnectionSet;
+        return totalConnectionPool.size();
+    }
 }
