@@ -422,18 +422,20 @@ public class Timeouts {
         if (Thread.currentThread().isVirtual())
             throw new SkipException("Main test is a virtual thread");
         try (ServerSocket ss = boundServerSocket()) {
-            ss.setSoTimeout(4000);
+            ss.setSoTimeout(8000);
             // interrupt thread after 1 second
             Future<?> interrupter = scheduleInterrupt(Thread.currentThread(), 1000);
             long startMillis = millisTime();
             try {
-                Socket s = ss.accept();   // should block for 4 seconds
+                Socket s = ss.accept();   // should block for 8 seconds
                 s.close();
                 fail();
             } catch (SocketTimeoutException expected) {
-                // accept should have blocked for 4 seconds
+                // accept should have blocked for 8 seconds
                 int timeout = ss.getSoTimeout();
                 checkDuration(startMillis, timeout-100, timeout+20_000);
+                System.out.println("Time since interrupt scheduled " +
+                        ( millisTime() - startMillis ));
                 assertTrue(Thread.currentThread().isInterrupted());
             } finally {
                 interrupter.cancel(true);
@@ -582,7 +584,13 @@ public class Timeouts {
      * Schedule thread to be interrupted after a delay
      */
     static Future<?> scheduleInterrupt(Thread thread, long delay) {
-        return schedule(() -> thread.interrupt(), delay);
+        System.out.println("Scheduling interrupt");
+        long startMillis = millisTime();
+        return schedule(() -> {
+            System.out.printf("Starting interrupt after %s delay %n",
+                    (millisTime() - startMillis));
+            thread.interrupt();
+        }, delay);
     }
 
     /**
